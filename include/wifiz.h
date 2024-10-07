@@ -8,8 +8,9 @@
 class Wifiz {
     const char * ssid;
     const char * password;
-    bool connected = false;
 public:
+    bool connected = false;
+
 
     Wifiz(const char * ssid, const char * password) : ssid(ssid), password(password) {}
 
