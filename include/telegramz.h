@@ -105,16 +105,16 @@ public:
         // bot->begin() ? Serial.println("OK") : Serial.println("NOK");
 
         configTime(0, 0, "pool.ntp.org"); // get UTC time via NTP
-        time_t now = time(nullptr);
-        while (now < 24 * 3600)
-        {
-            Serial.print(".");
-            delay(100);
-            now = time(nullptr);
-        }
+        // time_t now = time(nullptr);
+        // while (now < 24 * 3600)
+        // {
+        //     Serial.print(".");
+        //     delay(100);
+        //     now = time(nullptr);
+        // }
 
-        Serial.print("Telegramz init ");
-        Serial.println(now);
+        // Serial.print("Telegramz init ");
+        // Serial.println(now);
     }
 
     void begin()
