@@ -3,158 +3,166 @@
 
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
-#include <UniversalTelegramBot.h>
+#include <AsyncTelegram2.h>
 #include <vector>
 #include <esp_camera.h>
 
+class Telegramz
+{
 
-class Telegramz {
-
-    const char* botName = TELEGRAM_BOTNAME;
-    const char* botUsername = TELEGRAM_BOTUSERNAME;
-    const char* botToken = TELEGRAM_BOTTOKEN;
-    const char* chatId = TELEGRAM_CHATID;
+    const char *botName = TELEGRAM_BOTNAME;
+    const char *botUsername = TELEGRAM_BOTUSERNAME;
+    const char *botToken = TELEGRAM_BOTTOKEN;
+    const int64_t chatId = TELEGRAM_CHATID;
     const unsigned long BOT_MTBS = 1000; // mean time between scan messages
 
-    unsigned long bot_lasttime;          // last time messages' scan has been done
+    unsigned long bot_lasttime; // last time messages' scan has been done
     bool Start = false;
 
-    WiFiClientSecure* secured_client;
-    
-    UniversalTelegramBot* bot;
+    WiFiClientSecure *secured_client;
+
+    AsyncTelegram2 *bot;
 
     bool armed = false;
 
-    typedef void (*TelegramCallBack)(Telegramz*);
+    typedef void (*TelegramCallBack)(Telegramz *);
 
-    typedef struct Action {
+    typedef struct Action
+    {
         String text;
         TelegramCallBack execute;
     } Action;
 
-    std::vector< Action > actions = {
-        { "/arm", [](Telegramz* t) {
-            t->armed = true;
-            t->send("Armed!");
-        }},
-        { "/disarm", [](Telegramz* t) {
-            t->send("Disarmed!");
-            t->armed = false;
-        }}
-    };
+    std::vector<Action> actions = {
+        {"/arm", [](Telegramz *t)
+         {
+             t->armed = true;
+             t->send("Armed!");
+         }},
+        {"/disarm", [](Telegramz *t)
+         {
+             t->send("Disarmed!");
+             t->armed = false;
+         }}};
 
-    static uint8_t* fb_buffer;
-    static size_t fb_length;
-    static int currentByte;
+    void handleNewMessages(TBMessage msg)
+    {
+        const int64_t chat_id = msg.chatId;
+        String text = msg.text;
+        Serial.println(text);
+        String from_name = msg.sender.firstName;
+        if (from_name == "")
+        {
+            from_name = "Guest";
+        }
 
-    void handleNewMessages(int numNewMessages) {
-        //Serial.println("handleNewMessages");
-        //Serial.println(String(numNewMessages));
-
-        for (int i = 0; i < numNewMessages; i++) {
-            String chat_id = bot->messages[i].chat_id;
-            String text = bot->messages[i].text;
-            Serial.println(text);
-            String from_name = bot->messages[i].from_name;
-            if (from_name == "") {
-                from_name = "Guest";
+        if (text == "/start")
+        {
+            String welcome = "Welcome to zHome, " + from_name + ".\n";
+            for (int i = 0; i < actions.size(); i++)
+            {
+                welcome += actions.at(i).text + " \n";
             }
+            // bot->sendChatAction(chat_id, "typing");
+            // delay(1000);
+            bot->sendTo(chat_id, welcome);
+        }
 
-            if (text == "/start") {
-                String welcome = "Welcome to zHome, " + from_name + ".\n";
-                for (int i = 0; i < actions.size(); i++) {
-                    welcome += actions.at(i).text + " \n";
-                }
-                bot->sendChatAction(chat_id, "typing");
-                delay(1000);
-                bot->sendMessage(chat_id, welcome);
-            }
-
-            for (int i = 0; i < actions.size(); i++) {
-                Action action = actions.at(i);
-                if (text == action.text) {
-                    Serial.print("executing "); Serial.println(text);
-                    action.execute(this);
-                }
+        for (int i = 0; i < actions.size(); i++)
+        {
+            Action action = actions.at(i);
+            if (text == action.text)
+            {
+                Serial.print("executing ");
+                Serial.println(text);
+                action.execute(this);
             }
         }
     }
 
-    static bool isMoreDataAvailable() {
-        return (fb_length - currentByte);
-    }
-
-    static uint8_t photoNextByte() {
-        currentByte++;
-        return (fb_buffer[currentByte - 1]);
-    }
-
-    public:
-
-    Telegramz() {
+public:
+    Telegramz()
+    {
         secured_client = new WiFiClientSecure();
-        secured_client->setCACert(TELEGRAM_CERTIFICATE_ROOT); // Add root certificate for api.telegram.org
-        // secured_client->setInsecure(); // TEST az
+        secured_client->setCACert(telegram_cert);
 
-        bot = new UniversalTelegramBot(botToken, *secured_client);
+        bot = new AsyncTelegram2(*secured_client);
+
+        bot->addSentCallback([](bool sent)
+                             {
+            const char* res = sent ? "Picture delivered!" : "Error! Picture NOT delivered";
+            if (!sent) {
+                Serial.print("Sent");
+                // bot->sendTo(chatId, res); 
+            } }, 3000);
+
+        // Set the Telegram bot properies
+        bot->setUpdateTime(1000);
+        bot->setTelegramToken(botToken);
+
+        // Check if all things are ok
+        // Serial.print("\nTest Telegram connection... ");
+        // bot->begin() ? Serial.println("OK") : Serial.println("NOK");
 
         configTime(0, 0, "pool.ntp.org"); // get UTC time via NTP
         time_t now = time(nullptr);
-        while (now < 24 * 3600) {
+        while (now < 24 * 3600)
+        {
             Serial.print(".");
             delay(100);
             now = time(nullptr);
         }
 
-        Serial.print("Telegramz init ");Serial.println(now);
-
-        // send("started!");
+        Serial.print("Telegramz init ");
+        Serial.println(now);
     }
 
-    void addAction(String text, TelegramCallBack toExecute) {
-        Serial.print("adding  "); Serial.println(text);
+    void begin()
+    {
+        bot->begin();
+    }
+
+    void addAction(String text, TelegramCallBack toExecute)
+    {
+        Serial.print("adding  ");
+        Serial.println(text);
         actions.push_back({text, toExecute});
     }
-    
-    void send(const String& message) {
-        if (armed) {
-            Serial.print("sending ");Serial.println(message);
-            bot->sendMessage(chatId, message);
-            Serial.print("sended ");Serial.println(message);
-        }
-    }
 
-    void sendPhoto(camera_fb_t* fb) {
-        if (armed) {
-            Serial.print("sending photo");
-            bot->sendChatAction(chatId, "upload_photo");
-            currentByte = 0;
-            fb_length = fb->len;
-            fb_buffer = fb->buf;
-
-            bot->sendPhotoByBinary(chatId, "image/jpeg", fb->len, isMoreDataAvailable, photoNextByte, nullptr, nullptr);
-
-            fb_length = NULL;
-            fb_buffer = NULL;
+    void send(const String &message)
+    {
+        if (armed)
+        {
+            Serial.print("sending ");
+            Serial.println(message);
+            bot->sendTo(chatId, message);
             Serial.print("sended ");
+            Serial.println(message);
         }
     }
 
-    void loop() {
-        if (millis() - bot_lasttime > BOT_MTBS) {
-            int numNewMessages = bot->getUpdates(bot->last_message_received + 1);
+    void sendPhoto(camera_fb_t *fb)
+    {
+        bot->sendPhoto(chatId, fb->buf, fb->len);
+    }
 
-            while (numNewMessages) {
-                handleNewMessages(numNewMessages);
-                numNewMessages = bot->getUpdates(bot->last_message_received + 1);
+    void loop()
+    {
+        TBMessage msg;
+        // if there is an incoming message...
+        if (bot->getNewMessage(msg))
+        {
+            Serial.print("New message from chat_id: ");
+            Serial.println(msg.sender.id);
+            MessageType msgType = msg.messageType;
+
+            if (msgType == MessageText)
+            {
+                // Received a text message
+                handleNewMessages(msg);
             }
-
-            bot_lasttime = millis();
         }
     }
-
 };
-uint8_t* Telegramz::fb_buffer;
-size_t Telegramz::fb_length;
-int Telegramz::currentByte;
+
 #endif
