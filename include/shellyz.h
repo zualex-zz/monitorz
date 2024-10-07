@@ -21,7 +21,7 @@ typedef struct RelayItem
 
 class Shellyz
 {
-  const char *urlTemplate = "http://%s%s/relay/%d?turntoggle";
+  const char *urlTemplate = "http://%s%s/relay/%d?turn=toggle";
   const char *coIoTurlTemplate = "http://%s/cit/d";
   
   const ShellyItem gardenShelly = {"Giardin", "admin:d8xHUxwpkipWmz7", "192.168.1.150"};
@@ -66,7 +66,7 @@ public:
   }
 
   String toggle(RelayItem relay) {
-      char* url;
+      char url[66];
       sprintf(url, urlTemplate, relay.shelly->user, relay.shelly->host, relay.number);
       // Start the request
       http.begin(url);
@@ -77,7 +77,9 @@ public:
       response = http.getString();
 
       Serial.print(relay.label);
-      Serial.print("Shellyz toggle ");
+      Serial.print(" Shellyz toggle ");
+      Serial.print(url);
+      Serial.print(" response ");
       Serial.println(response);
       return response;
   }
