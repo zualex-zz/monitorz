@@ -9,7 +9,7 @@
 #include "pirz.h"
 #include "wifiz.h"
 #include "telegramz.h"
-// #include "shellyz.h"
+#include "shellyz.h"
 #include "camz.h"
 #include "utilz.h"
 
@@ -23,6 +23,7 @@ boolean photoOnPir = false;
 Wifiz* wifiz;
 Camz* camz;
 Telegramz* telegramz;
+Shellyz* shellyz;
 
 /*int32_t functionGenEnabled = 0; // FIXME: type was bool but menu supports only int
 int32_t frequency = 100;
@@ -163,6 +164,7 @@ void setup() {
       };*/
 
       telegramz = new Telegramz();
+      shellyz = new Shellyz();
       telegramz->addAction("/takePicture", [](Telegramz* t) {
         camera_fb_t* fb = camz->takePhoto();
         t->sendPhoto(fb);
@@ -178,9 +180,22 @@ void setup() {
       });
       telegramz->addAction("/flash", [](Telegramz* t) {
         t->send(camz->toggleFlash() ? "on" : "off");
+      });;
+      telegramz->addAction("/soggiorno", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[4]));
+      });
+      telegramz->addAction("/corridoio", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[5]));
+      });
+      telegramz->addAction("/cancel", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[6]));
       });
 
-      // Shellyz* shellyz = new Shellyz();
+      // for (const RelayItem &relay : shellyz->relaies) {
+      //   telegramz->addAction(relay.label, [](Telegramz* t) {
+      //   t->send(shellyz->toggle(relay));
+      // });
+      // }
       
       Pirz::setup([]() {
         // oledz.show("motion");
@@ -284,7 +299,9 @@ void loop() {
 
   }*/
 
+if (wifiz->connected) {
   telegramz->loop();
+}
 
   // Pirz::loop();
 
@@ -293,6 +310,8 @@ void loop() {
 if (wifiz->justConnected()) {
     //webServerz.begin();
     Serial.println("wifi!");
+    telegramz->begin();
+    camz->startCameraServer();
   }
 
   // Wifiz::handleOTA();
