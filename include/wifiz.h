@@ -90,10 +90,7 @@ public:
 
     void handleOTA()
     {
-        if (this->connected)
-        {
-            ArduinoOTA.handle();
-        }
+        ArduinoOTA.handle();
     }
 };
 
