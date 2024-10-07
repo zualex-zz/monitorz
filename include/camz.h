@@ -70,6 +70,7 @@ class Camz {
             configg.frame_size = FRAMESIZE_UXGA;
             configg.jpeg_quality = 10;
             configg.fb_count = 2;
+            configg.grab_mode = CAMERA_GRAB_LATEST;
         } else {
             configg.frame_size = FRAMESIZE_SVGA;
             configg.jpeg_quality = 12;
