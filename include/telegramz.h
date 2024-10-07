@@ -131,14 +131,14 @@ public:
 
     void send(const String &message)
     {
-        if (armed)
-        {
+        // if (armed)
+        // {
             Serial.print("sending ");
             Serial.println(message);
             bot->sendTo(chatId, message);
             Serial.print("sended ");
             Serial.println(message);
-        }
+        // }
     }
 
     void sendPhoto(camera_fb_t *fb)
