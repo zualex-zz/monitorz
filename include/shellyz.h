@@ -4,32 +4,87 @@
 #include <Arduino.h>
 #include <HTTPClient.h>
 
-class Shellyz {
-        const char* url = "http://192.168.1.150/";
-        const char* coIoT = "http://192.168.1.150/cit/d";
-        std::string baseUrl =" http://192.168.1.150/";
-        std::string r1Toggle = baseUrl + "/relay/0?turn=toggle";
+typedef struct ShellyItem
+{
+  const char *label;
+  const char *user;
+  const char *host;
+  // std::vector<RelayItem> relays;
+} ShellyItem;
 
-    public:
+typedef struct RelayItem
+{
+  const char *label;
+  const int number;
+  const ShellyItem *shelly;
+} RelayItem;
 
-        Shellyz() {
-            HTTPClient http;
+class Shellyz
+{
+  const char *urlTemplate = "http://%s%s/relay/%d?turntoggle";
+  const char *coIoTurlTemplate = "http://%s/cit/d";
+  
+  const ShellyItem gardenShelly = {"Giardin", "admin:d8xHUxwpkipWmz7", "192.168.1.150"};
+  const ShellyItem kitchenShelly = {"Cusina", "", "192.168.1.151"};
+  const ShellyItem tvShelly = {"Soggiorno", "", "192.168.1.152"};
+  const ShellyItem gateShelly = {"Cancel", "", "192.168.1.153"};
+  
+  const std::vector<ShellyItem> shellies = {gardenShelly, kitchenShelly, tvShelly, gateShelly};
+  public:
+  const std::vector<RelayItem> relaies = {
+      {"Casa", 0, &gardenShelly},
+      {"Giardin", 1, &gardenShelly},
+      {"Sala pranzo", 0, &kitchenShelly},
+      {"Cucina", 1, &kitchenShelly},
+      {"Soggiorno", 0, &tvShelly},
+      {"Corridoio", 1, &tvShelly},
+      {"Cancel", 0, &gateShelly}};
 
-              //Start the request
-            http.begin(coIoT);
-            //Use HTTP GET request
-            http.GET();
-            //Response from server
-            String response = "";
-            response = http.getString();
+    HTTPClient http;
 
-            Serial.print("Shellyz get status ");Serial.println(response);
-        }
+public:
+  Shellyz()
+  {
+    // HTTPClient http;
 
-        static void loop() {
+    for (const ShellyItem &shelly : shellies)
+    {
+      char url[30];
+      sprintf(url, coIoTurlTemplate, shelly.host);
+      // Start the request
+      http.begin(url);
+      // Use HTTP GET request
+      http.GET();
+      // Response from server
+      String response = "";
+      response = http.getString();
 
-        }
+      Serial.print(shelly.label);
+      Serial.print("Shellyz get status ");
+      Serial.println(response);
+    }
+  }
 
+  String toggle(RelayItem relay) {
+      char* url;
+      sprintf(url, urlTemplate, relay.shelly->user, relay.shelly->host, relay.number);
+      // Start the request
+      http.begin(url);
+      // Use HTTP GET request
+      http.GET();
+      // Response from server
+      String response = "";
+      response = http.getString();
+
+      Serial.print(relay.label);
+      Serial.print("Shellyz toggle ");
+      Serial.println(response);
+      return response;
+  }
+
+  static void loop()
+  {
+  }
 };
 // unsigned long Shellyz::coIoT;
 #endif
