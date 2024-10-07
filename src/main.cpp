@@ -107,6 +107,56 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
   }
 }*/
 
+
+    httpd_handle_t stream_httpd = NULL;
+    httpd_handle_t camera_httpd = NULL;
+
+    void startHttpServer()
+    {
+        httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+        config.server_port = 80;
+
+        httpd_uri_t index_uri = {
+            .uri = "/",
+            .method = HTTP_GET,
+            .handler = Camz::stream_handler,
+            .user_ctx = NULL};
+
+        httpd_uri_t capture_uri = {
+            .uri = "/capture",
+            .method = HTTP_GET,
+            .handler = Camz::capture_handler,
+            .user_ctx = NULL};
+
+        httpd_uri_t send_uri = {
+            .uri = "/send",
+            .method = HTTP_GET,
+            .handler = [](httpd_req *r) {
+              camera_fb_t* fb = camz->takePhoto();
+              telegramz->sendPhoto(fb);
+              camz->reuseBuffer(fb);
+              return ESP_OK;
+            },
+            .user_ctx = NULL};
+
+
+
+        Serial.printf("Starting stream server on port: '%d'\n", config.server_port);
+        if (httpd_start(&stream_httpd, &config) == ESP_OK)
+        {
+            httpd_register_uri_handler(stream_httpd, &index_uri);
+        }
+
+        config.server_port += 1;
+        config.ctrl_port += 1;
+        Serial.printf("Starting snapshot server on port: '%d'\n", config.server_port);
+        if (httpd_start(&camera_httpd, &config) == ESP_OK)
+        {
+            httpd_register_uri_handler(camera_httpd, &capture_uri);
+            httpd_register_uri_handler(camera_httpd, &send_uri);
+        }
+    }
+
 void setup() {
 
   Serial.begin(115200);
@@ -180,7 +230,7 @@ void setup() {
       });
       telegramz->addAction("/flash", [](Telegramz* t) {
         t->send(camz->toggleFlash() ? "on" : "off");
-      });;
+      });
       telegramz->addAction("/soggiorno", [](Telegramz* t) {
         t->send(shellyz->toggle(shellyz->relaies[4]));
       });
@@ -310,8 +360,8 @@ if (wifiz->connected) {
 if (wifiz->justConnected()) {
     //webServerz.begin();
     Serial.println("wifi!");
+    startHttpServer();
     telegramz->begin();
-    camz->startCameraServer();
   }
 
   // Wifiz::handleOTA();
