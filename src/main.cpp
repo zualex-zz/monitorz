@@ -205,7 +205,14 @@ void setup() {
       // Wifiz::connect();
       // Wifiz::enableOTA();
 
-      camz = new Camz();
+      camz = new Camz([]() {
+        telegramz->send("Xe movimento!");
+        // camz->cameraImageSettings(FRAME_SIZE_PHOTO);
+        // camera_fb_t* fb = camz->takePhoto();
+        // telegramz->sendPhoto(fb);
+        // camz->reuseBuffer(fb);
+        // camz->cameraImageSettings(FRAME_SIZE_MOTION);
+      });
 
       /*auto takeAndsendPhoto = [](Telegramz* t) {
         camera_fb_t* fb = camz->takePhoto();
@@ -349,10 +356,6 @@ void loop() {
 
   }*/
 
-if (wifiz->connected) {
-  telegramz->loop();
-}
-
   // Pirz::loop();
 
   // Serial.print(buffer16[0]);Serial.print(" ");Serial.print(buffer16[1]);Serial.print(" ");Serial.print(buffer16[2]);Serial.print(" ");Serial.print(buffer16[3]);
@@ -364,6 +367,9 @@ if (wifiz->justConnected()) {
     telegramz->begin();
   }
 
-  // Wifiz::handleOTA();
-  wifiz->handleOTA();
+  if (wifiz->connected) {
+    camz->loop();
+    telegramz->loop();
+    wifiz->handleOTA();
+  }
 }
