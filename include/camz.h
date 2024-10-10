@@ -53,31 +53,24 @@ static const char *_STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %
 class Camz
 {
     // boolean detectionEnabled = true;
-    uint16_t Block_threshold = 10;          // average pixel variation in block required to count as changed - range 0 to 255
-    uint16_t Image_thresholdL = 15;         // min changed blocks in image required to count as motion detected in percent
-    uint16_t Image_thresholdH = 100;        // max changed blocks in image required to count as motion detected in percent
-    uint16_t tCounter = 0;                  // count number of consecutive triggers (i.e. how many times in a row movement has been detected)
-    uint16_t tCounterTrigger = 1;           // only trigger if movement detected in more than one consequitive frames
-    uint32_t TRIGGERtimer = 0;              // used for limiting camera motion trigger rate
-    uint16_t TriggerLimitTime = 2;          // min time between motion detection trigger events (seconds)
-    uint16_t AveragePix = 0;                // average pixel reading from captured image (used for nighttime compensation) - bright day = around 120
-    float thresholdGainCompensation = 0.65; // motion detection level compensation for increased noise in image when gain increased (i.e. in darker conditions)
-    float cameraImageGain = 0;              // Image gain (loaded from spiffs)
-    float cameraImageExposure = 0;          // Camera exposure (loaded from spiffs)
-    bool cameraImageInvert = 0;             // Invert image  (i.e. upside down)
-    int8_t cameraImageBrightness = 0;       // image brighness (-2 to 2) - Note: has no effect?
-    int8_t cameraImageContrast = 0;         // image contrast (-2 to 2) - Note: has no effect?
-    bool cameraImageFlip = 0;               // flip image  (i.e. left to right)
+    uint16_t Block_threshold = 10;   // average pixel variation in block required to count as changed - range 0 to 255
+    uint16_t Image_thresholdL = 15;  // min changed blocks in image required to count as motion detected in percent
+    uint16_t Image_thresholdH = 100; // max changed blocks in image required to count as motion detected in percent
+    uint16_t tCounter = 0;           // count number of consecutive triggers (i.e. how many times in a row movement has been detected)
+    uint16_t tCounterTrigger = 1;    // only trigger if movement detected in more than one consequitive frames
+    uint32_t TRIGGERtimer = 0;       // used for limiting camera motion trigger rate
+    uint16_t TriggerLimitTime = 2;   // min time between motion detection trigger events (seconds)
+
     // frame stores (blocks)
     uint16_t prev_frame[FH][FW] = {0};    // previously captured frame
     uint16_t current_frame[FH][FW] = {0}; // current frame
     // bool block_active(uint16_t x, uint16_t y);
-    // uint16_t latestChanges = 0; // store most current motion detection reading for display on main page
+
     CamCallBack camMotionCallback;
 
     boolean flashEnabled = false;
     camera_fb_t *fb;
-
+    uint8_t *rgb_buf = new uint8_t[FWIDTH * FHEIGHT * 3];
 public:
     static esp_err_t capture_handler(httpd_req_t *req);
     static esp_err_t stream_handler(httpd_req_t *req);
@@ -109,18 +102,16 @@ public:
         configg.pin_sccb_scl = SIOC_GPIO_NUM;
         configg.pin_pwdn = PWDN_GPIO_NUM;
         configg.pin_reset = RESET_GPIO_NUM;
-        configg.xclk_freq_hz = 20000000;            // XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
-        configg.pixel_format = PIXFORMAT_GRAYSCALE; // PIXFORMAT_ + YUV422, GRAYSCALE, RGB565, JPEG, RGB888?
-        // configg.pixel_format = PIXFORMAT_JPEG;
+        configg.xclk_freq_hz = 20000000;       // XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+        configg.pixel_format = PIXFORMAT_JPEG; // PIXFORMAT_ + YUV422, GRAYSCALE, RGB565, JPEG, RGB888?
 
-        // rtc_gpio_hold_dis(GPIO_NUM_4);
-
+        // init with high specs to pre-allocate larger buffers
         if (psramFound())
         {
             Serial.printf("Ps ram found!");
-            configg.frame_size = FRAME_SIZE_MOTION; // FRAMESIZE_ + QVGA, CIF, VGA, SVGA, XGA, SXGA, UXGA
-            configg.jpeg_quality = 10;              // 0-63 lower number means higher quality (can cause failed image capture if set too low at higher resolutions)
-            configg.fb_count = 1;                   // if more than one, i2s runs in continuous mode. Use only with JPEG
+            configg.frame_size = FRAMESIZE_UXGA; // FRAMESIZE_ + QVGA, CIF, VGA, SVGA, XGA, SXGA, UXGA
+            configg.jpeg_quality = 10;           // 0-63 lower number means higher quality (can cause failed image capture if set too low at higher resolutions)
+            configg.fb_count = 2;                // if more than one, i2s runs in continuous mode. Use only with JPEG
             configg.grab_mode = CAMERA_GRAB_LATEST;
         }
         else
@@ -136,13 +127,32 @@ public:
         {
             Serial.printf("Camera init failed with error");
         }
-        // cameraImageSettings(FRAME_SIZE_MOTION);
+
+        // drop down frame size for higher initial frame rate
+        sensor_t *s = esp_camera_sensor_get();
+        s->set_framesize(s, FRAME_SIZE_MOTION);
+
         TRIGGERtimer = millis(); // reset the retrigger timer to stop instant triggering of motion detection
+    }
+
+    void setFramesizePhoto()
+    {
+        sensor_t *s = esp_camera_sensor_get();
+        s->set_framesize(s, FRAME_SIZE_PHOTO);
+    }
+
+    void setFramesizeMotion()
+    {
+        sensor_t *s = esp_camera_sensor_get();
+        s->set_framesize(s, FRAME_SIZE_MOTION);
     }
 
     camera_fb_t *takePhoto()
     {
+        // sensor_t *s = esp_camera_sensor_get();
+        // s->set_framesize(s, FRAME_SIZE_PHOTO);
         return esp_camera_fb_get();
+        // s->set_framesize(s, FRAME_SIZE_MOTION);
     }
 
     void reuseBuffer(camera_fb_t *fb)
@@ -157,72 +167,6 @@ public:
         return flashEnabled;
     }
 
-    // https://github.com/alanesq/CameraWifiMotion/blob/master/CameraWifiMotion/motion.h
-    // ---------------------------------------------------------------
-    //             -apply camera sensor/image settings
-    // ---------------------------------------------------------------
-    // see: https://randomnerdtutorials.com/esp32-cam-ov2640-camera-settings/
-
-    bool cameraImageSettings(framesize_t fsize)
-    {
-        Serial.printf("cameraImageSettings");
-        sensor_t *s = esp_camera_sensor_get();
-        Serial.printf("esp_camera_sensor_get");
-        if (s == NULL)
-        {
-            // if (serialDebug)
-            Serial.println("Error: problem getting camera sensor settings");
-            return 0;
-        }
-
-        // #if IMAGE_SETTINGS // Implement adjustment of image settings
-
-        // Image resolution / type  (may not be required?)
-        Serial.printf("set_framesize");
-        // Serial.printf(fsize);
-        s->set_framesize(s, fsize); // FRAME_SIZE_PHOTO , FRAME_SIZE_MOTION
-        if (fsize == FRAME_SIZE_MOTION)
-            Serial.printf("set_fset_pixformatramesize");
-        // Serial.printf(PIXFORMAT_GRAYSCALE);
-        s->set_pixformat(s, PIXFORMAT_GRAYSCALE);
-        if (fsize == FRAME_SIZE_PHOTO)
-            s->set_pixformat(s, PIXFORMAT_JPEG);
-
-        Serial.printf("set_gain_ctrl");
-        // If you enable gain_ctrl or exposure_ctrl it will prevent a lot of the other settings having any effect
-        // more info on settings here: https://randomnerdtutorials.com/esp32-cam-ov2640-camera-settings/
-        s->set_gain_ctrl(s, 0);                      // auto gain off (1 or 0)
-        s->set_exposure_ctrl(s, 0);                  // auto exposure off (1 or 0)
-        s->set_agc_gain(s, cameraImageGain);         // set gain manually (0 - 31)
-        s->set_aec_value(s, cameraImageExposure);    // set exposure manually  (0-1200)
-        s->set_vflip(s, cameraImageInvert);          // Invert image (0 or 1)
-        s->set_quality(s, 10);                       // (0 - 63)
-        s->set_gainceiling(s, GAINCEILING_32X);      // Image gain (GAINCEILING_x2, x4, x8, x16, x32, x64 or x128)
-        s->set_brightness(s, cameraImageBrightness); // (-2 to 2) - set brightness
-        s->set_lenc(s, 1);                           // lens correction? (1 or 0)
-        s->set_saturation(s, 0);                     // (-2 to 2)
-        s->set_contrast(s, cameraImageContrast);     // (-2 to 2)
-        s->set_sharpness(s, 0);                      // (-2 to 2)
-        s->set_hmirror(s, cameraImageFlip);          // (0 or 1) flip horizontally
-        s->set_colorbar(s, 0);                       // (0 or 1) - show a testcard
-        s->set_special_effect(s, 0);                 // (0 to 6?) apply special effect
-                                                     //       s->set_whitebal(s, 0);                        // white balance enable (0 or 1)
-                                                     //       s->set_awb_gain(s, 1);                        // Auto White Balance enable (0 or 1)
-                                                     //       s->set_wb_mode(s, 0);                         // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
-                                                     //       s->set_dcw(s, 0);                             // downsize enable? (1 or 0)?
-                                                     //       s->set_raw_gma(s, 1);                         // (1 or 0)
-                                                     //       s->set_aec2(s, 0);                            // automatic exposure sensor?  (0 or 1)
-                                                     //       s->set_ae_level(s, 0);                        // auto exposure levels (-2 to 2)
-        s->set_bpc(s, 0);                            // black pixel correction
-        s->set_wpc(s, 0);                            // white pixel correction
-                                                     // #endif
-
-        // capture a frame to ensure settings apply (not sure if this is really needed)
-        // camera_fb_t *frame_buffer = esp_camera_fb_get(); // capture frame from camera
-        // esp_camera_fb_return(frame_buffer);              // return frame so memory can be released
-
-        return 1;
-    }
     // ---------------------------------------------------------------
     //                          -capture image
     // ---------------------------------------------------------------
@@ -245,13 +189,14 @@ public:
 
         // capture image from camera
         // cameraImageSettings(FRAME_SIZE_MOTION);          // apply camera sensor settings
-        camera_fb_t *frame_buffer = esp_camera_fb_get(); // capture frame from camera
-        if (!frame_buffer)
-        { // if there was a problem grabbing a frame try again
-            frame_buffer = esp_camera_fb_get();
-            if (!frame_buffer)
-                return false; // failed to capture image
+        fb = esp_camera_fb_get(); // capture frame from camera
+        if (!fb)
+        {
+            return false; // failed to capture image
         }
+
+        // uint8_t *rgb_buf = new uint8_t[fb->width * fb->height * 3];
+        bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_JPEG, rgb_buf);
 
         // down-sample image in to blocks
         for (uint32_t i = 0; i < (FWIDTH * FHEIGHT); i++)
@@ -260,11 +205,16 @@ public:
             const uint16_t y = floor(i / FWIDTH);
             const uint8_t block_x = floor(x / BLOCK_SIZE_X); // calculate which block this pixel is in
             const uint8_t block_y = floor(y / BLOCK_SIZE_Y);
-            const uint8_t pixel = frame_buffer->buf[i]; // get the pixels brightness (0 to 255)
-            temp_frame[block_y][block_x] += pixel;      // add this pixel to the blocks running total
+            const uint32_t ix3 = i*3;
+            const uint8_t R = rgb_buf[ix3];
+            const uint8_t G = rgb_buf[ix3 + 1];
+            const uint8_t B = rgb_buf[ix3 + 2];
+            const uint8_t pixel = (0.2126 * R + 0.7152 * G + 0.0722 * B); // get the pixels brightness (0 to 255)
+            temp_frame[block_y][block_x] += pixel;                        // add this pixel to the blocks running total
+            // Serial.printf("%d %d %d %d %d %d %d %d", i, R, G, B, pixel, block_y, block_x, temp_frame[block_y][block_x]);
+            // Serial.println();
         }
-
-        esp_camera_fb_return(frame_buffer); // return frame so memory can be released
+        esp_camera_fb_return(fb); // return frame so memory can be released
 
         // average the values for all pixels in each block
         bool frameChanged = 0;       // flag if any change at all since last frame (used to detect problem)
