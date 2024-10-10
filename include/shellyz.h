@@ -47,22 +47,22 @@ public:
   {
     // HTTPClient http;
 
-    for (const ShellyItem &shelly : shellies)
-    {
-      char url[30];
-      sprintf(url, coIoTurlTemplate, shelly.host);
-      // Start the request
-      http.begin(url);
-      // Use HTTP GET request
-      http.GET();
-      // Response from server
-      String response = "";
-      response = http.getString();
+    // for (const ShellyItem &shelly : shellies)
+    // {
+    //   char url[30];
+    //   sprintf(url, coIoTurlTemplate, shelly.host);
+    //   // Start the request
+    //   http.begin(url);
+    //   // Use HTTP GET request
+    //   http.GET();
+    //   // Response from server
+    //   String response = "";
+    //   response = http.getString();
 
-      Serial.print(shelly.label);
-      Serial.print("Shellyz get status ");
-      Serial.println(response);
-    }
+    //   Serial.print(shelly.label);
+    //   Serial.print("Shellyz get status ");
+    //   Serial.println(response);
+    // }
   }
 
   String toggle(RelayItem relay) {
