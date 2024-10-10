@@ -206,11 +206,11 @@ void setup() {
       // Wifiz::enableOTA();
 
       camz = new Camz([]() {
-        telegramz->send("Xe movimento!");
+        // telegramz->send("Xe movimento!");
         // camz->cameraImageSettings(FRAME_SIZE_PHOTO);
-        // camera_fb_t* fb = camz->takePhoto();
-        // telegramz->sendPhoto(fb);
-        // camz->reuseBuffer(fb);
+        camera_fb_t* fb = camz->takePhoto();
+        telegramz->sendPhoto(fb);
+        camz->reuseBuffer(fb);
         // camz->cameraImageSettings(FRAME_SIZE_MOTION);
       });
 
@@ -223,9 +223,11 @@ void setup() {
       telegramz = new Telegramz();
       shellyz = new Shellyz();
       telegramz->addAction("/takePicture", [](Telegramz* t) {
+        camz->setFramesizePhoto();
         camera_fb_t* fb = camz->takePhoto();
         t->sendPhoto(fb);
         camz->reuseBuffer(fb);
+        camz->setFramesizeMotion();
       });
       telegramz->addAction("/picture", [](Telegramz* t) {
         photoOnPir = !photoOnPir;
