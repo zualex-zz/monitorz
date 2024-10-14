@@ -33,19 +33,19 @@ public:
 
   // Needed for painless library
   // static void receivedCallback( uint32_t from, String &msg ) {
-  //   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  //   SERIALZ.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
   // }
 
   static void newConnectionCallback(uint32_t nodeId) {
-      Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+      SERIALZ.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
   }
 
   static void changedConnectionCallback() {
-    Serial.printf("Changed connections\n");
+    SERIALZ.printf("Changed connections\n");
   }
 
   static void nodeTimeAdjustedCallback(int32_t offset) {
-      Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
+      SERIALZ.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(),offset);
   }
 
   static void init(void (*receivedCallback)(uint32_t, String&)) {

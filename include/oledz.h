@@ -30,7 +30,7 @@ public:
         display = new Adafruit_SSD1306(width, height, &Wire, -1);
 
         if(!display->begin(SSD1306_SWITCHCAPVCC, addr)) { // 0x3C or 0x3D
-            Serial.println("Display allocation failed");
+            SERIALZ.println("Display allocation failed");
         }
         display->clearDisplay();
         showSplashScreen();
@@ -59,7 +59,7 @@ public:
         // display->print("ciao");
 
         display->display();
-        Serial.println("oled displayed");
+        SERIALZ.println("oled displayed");
     }
 
     template <typename T>

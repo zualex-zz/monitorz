@@ -42,7 +42,7 @@ private:
   // callback when data is sent
   static void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     if (status != ESP_NOW_SEND_SUCCESS) {
-      Serial.print("Delivery Fail ");Serial.print(status);
+      SERIALZ.print("Delivery Fail ");SERIALZ.print(status);
     }
     
   }
@@ -53,19 +53,19 @@ private:
 
     onMessage(&espMessage);
 
-    // Serial.print("Bytes received: ");
-    // Serial.println(len);
-    // Serial.print("Char: ");
-    // Serial.println(espMessage.a);
-    // Serial.print("Int: ");
-    // Serial.println(espMessage.b);
-    // Serial.print("Float: ");
-    // Serial.println(espMessage.c);
-    // Serial.print("String: ");
-    // Serial.println(espMessage.d);
-    // Serial.print("Bool: ");
-    // Serial.println(espMessage.e);
-    // Serial.println();
+    // SERIALZ.print("Bytes received: ");
+    // SERIALZ.println(len);
+    // SERIALZ.print("Char: ");
+    // SERIALZ.println(espMessage.a);
+    // SERIALZ.print("Int: ");
+    // SERIALZ.println(espMessage.b);
+    // SERIALZ.print("Float: ");
+    // SERIALZ.println(espMessage.c);
+    // SERIALZ.print("String: ");
+    // SERIALZ.println(espMessage.d);
+    // SERIALZ.print("Bool: ");
+    // SERIALZ.println(espMessage.e);
+    // SERIALZ.println();
   }*/
 
   static void findCurrentNodeAndRegisterOthers() {
@@ -75,10 +75,10 @@ private:
     for (int i = 0; i < espNodes.size(); i++) {
       EspNode espNode = espNodes.at(i);
       if (memcmp(espNode.address, &myMac, sizeof(espNode.address)) == 0) { /* returns zero for a match */
-        Serial.print("I'm ");Serial.println(espNode.name);
+        SERIALZ.print("I'm ");SERIALZ.println(espNode.name);
         currentNode = &espNodes.at(i);
       } else {
-        Serial.print("Registering ");Serial.println(espNode.name);
+        SERIALZ.print("Registering ");SERIALZ.println(espNode.name);
 
         memcpy(peerInfo.peer_addr, espNode.address, sizeof(espNode.address));
         peerInfo.channel = 0;  
@@ -87,8 +87,8 @@ private:
         // Add peer        
         esp_err_t result = esp_now_add_peer(&peerInfo);
         if (result != ESP_OK) {
-          Serial.print("Failed to add peer ");Serial.println(espNode.name);
-          Serial.println(result, HEX); // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/error-codes.html
+          SERIALZ.print("Failed to add peer ");SERIALZ.println(espNode.name);
+          SERIALZ.println(result, HEX); // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/error-codes.html
         }
       }
     }
@@ -97,14 +97,14 @@ private:
 public:
   
   static void init(void (*onMessage)(EspMessage*)) {
-    Serial.println("Initializing ESP-NOW");
+    SERIALZ.println("Initializing ESP-NOW");
     EspNowz::onMessage = onMessage;
     // Set device as a Wi-Fi Station
     WiFi.mode(WIFI_STA);
     
     // Init ESP-NOW
     if (esp_now_init() != ESP_OK) {
-      Serial.println("Error initializing ESP-NOW");
+      SERIALZ.println("Error initializing ESP-NOW");
       return;
     }
     
@@ -126,11 +126,11 @@ public:
     esp_err_t result = esp_now_send(espNode.address, (uint8_t *) &espMessage, sizeof(espMessage));
     
     if (result == ESP_OK) {
-      Serial.println("Sent with success");
+      SERIALZ.println("Sent with success");
     }
     else {
-      Serial.print("Error sending the data ");
-      Serial.println(result, HEX);
+      SERIALZ.print("Error sending the data ");
+      SERIALZ.println(result, HEX);
     }
     // delay(2000);
   }

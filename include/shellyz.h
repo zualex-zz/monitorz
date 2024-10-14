@@ -59,9 +59,9 @@ public:
     //   String response = "";
     //   response = http.getString();
 
-    //   Serial.print(shelly.label);
-    //   Serial.print("Shellyz get status ");
-    //   Serial.println(response);
+    //   SERIALZ.print(shelly.label);
+    //   SERIALZ.print("Shellyz get status ");
+    //   SERIALZ.println(response);
     // }
   }
 
@@ -76,11 +76,11 @@ public:
       String response = "";
       response = http.getString();
 
-      Serial.print(relay.label);
-      Serial.print(" Shellyz toggle ");
-      Serial.print(url);
-      Serial.print(" response ");
-      Serial.println(response);
+      SERIALZ.print(relay.label);
+      SERIALZ.print(" Shellyz toggle ");
+      SERIALZ.print(url);
+      SERIALZ.print(" response ");
+      SERIALZ.println(response);
       return response;
   }
 

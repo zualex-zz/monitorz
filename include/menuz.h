@@ -26,40 +26,40 @@ class Menuz {
             MenuItem root = {"Root", items};
             level.push(root);
 
-            Serial.print("menuz init ");Serial.println(level.top().label);
-            Serial.print("menuz init ");Serial.println(level.top().children.size());
+            SERIALZ.print("menuz init ");SERIALZ.println(level.top().label);
+            SERIALZ.print("menuz init ");SERIALZ.println(level.top().children.size());
         }
 
         void next() {
-            Serial.print("menuz next ");Serial.println(level.top().label);
-            Serial.print("menuz next ");Serial.println(level.top().children.size());
+            SERIALZ.print("menuz next ");SERIALZ.println(level.top().label);
+            SERIALZ.print("menuz next ");SERIALZ.println(level.top().children.size());
             if (!editing) {
                 if (currentIndex < level.top().children.size()) {
                     currentIndex++;
                 }
             } else {
-                Serial.print("menuz actionUp");
+                SERIALZ.print("menuz actionUp");
                 level.top().children.at(currentIndex).actionUp();
             }
-            Serial.print("menuz currentIndex ");Serial.println(currentIndex);
+            SERIALZ.print("menuz currentIndex ");SERIALZ.println(currentIndex);
         }
 
         void prev() {
-            Serial.print("menuz prev ");Serial.println(level.top().label);
-            Serial.print("menuz prev ");Serial.println(level.top().children.size());
+            SERIALZ.print("menuz prev ");SERIALZ.println(level.top().label);
+            SERIALZ.print("menuz prev ");SERIALZ.println(level.top().children.size());
             if (!editing) {
                 if (currentIndex > 0) {
                     currentIndex--;
                 }
             } else {
-                Serial.print("menuz actionDown");
+                SERIALZ.print("menuz actionDown");
                 level.top().children.at(currentIndex).actionDown();
             }
-            Serial.print("menuz currentIndex ");Serial.println(currentIndex);
+            SERIALZ.print("menuz currentIndex ");SERIALZ.println(currentIndex);
         }
 
         void select() {
-            Serial.print("menuz select ");Serial.println(currentIndex);
+            SERIALZ.print("menuz select ");SERIALZ.println(currentIndex);
             if (currentIndex < level.top().children.size()) {
                 MenuItem* current = &level.top().children.at(currentIndex);
                 if (current->children.size() > 0) {
@@ -70,9 +70,9 @@ class Menuz {
                     editing = !editing;
                 }
             } else {
-                Serial.print("menuz select back");
+                SERIALZ.print("menuz select back");
                 // if (level.empty() ) {
-                    Serial.print("menuz select size ");Serial.println(level.size());
+                    SERIALZ.print("menuz select size ");SERIALZ.println(level.size());
                 // }
                 level.pop();
                 currentIndex = 0;

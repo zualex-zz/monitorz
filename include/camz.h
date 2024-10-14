@@ -71,9 +71,12 @@ class Camz
     boolean flashEnabled = false;
     camera_fb_t *fb;
     uint8_t *rgb_buf = new uint8_t[FWIDTH * FHEIGHT * 3];
+
 public:
     static esp_err_t capture_handler(httpd_req_t *req);
     static esp_err_t stream_handler(httpd_req_t *req);
+
+    boolean armed = false;
 
     Camz(CamCallBack camMotion = []() {})
     {
@@ -108,7 +111,7 @@ public:
         // init with high specs to pre-allocate larger buffers
         if (psramFound())
         {
-            Serial.printf("Ps ram found!");
+            SERIALZ.printf("Ps ram found!");
             configg.frame_size = FRAMESIZE_UXGA; // FRAMESIZE_ + QVGA, CIF, VGA, SVGA, XGA, SXGA, UXGA
             configg.jpeg_quality = 10;           // 0-63 lower number means higher quality (can cause failed image capture if set too low at higher resolutions)
             configg.fb_count = 2;                // if more than one, i2s runs in continuous mode. Use only with JPEG
@@ -125,7 +128,7 @@ public:
         esp_err_t err = esp_camera_init(&configg);
         if (err != ESP_OK)
         {
-            Serial.printf("Camera init failed with error");
+            SERIALZ.printf("Camera init failed with error");
         }
 
         // drop down frame size for higher initial frame rate
@@ -177,13 +180,13 @@ public:
 
     bool capture_still()
     {
-        // Serial.println("capture_still");
+        // SERIALZ.println("capture_still");
         // checkCameraIsFree(); // try to avoid using camera if already in use
         // if (!detectionEnabled)
         //     return 0; // if detection is paused another process may be using camera
 
-        Serial.flush(); // wait for serial data to be sent first as I suspect this can cause problems capturing an image
-                        //      although I have read that this command has changed and no longer performs this function?
+        SERIALZ.flush(); // wait for serial data to be sent first as I suspect this can cause problems capturing an image
+                         //      although I have read that this command has changed and no longer performs this function?
 
         uint32_t temp_frame[FH][FW] = {0};
 
@@ -205,14 +208,14 @@ public:
             const uint16_t y = floor(i / FWIDTH);
             const uint8_t block_x = floor(x / BLOCK_SIZE_X); // calculate which block this pixel is in
             const uint8_t block_y = floor(y / BLOCK_SIZE_Y);
-            const uint32_t ix3 = i*3;
+            const uint32_t ix3 = i * 3;
             const uint8_t R = rgb_buf[ix3];
             const uint8_t G = rgb_buf[ix3 + 1];
             const uint8_t B = rgb_buf[ix3 + 2];
             const uint8_t pixel = (0.2126 * R + 0.7152 * G + 0.0722 * B); // get the pixels brightness (0 to 255)
             temp_frame[block_y][block_x] += pixel;                        // add this pixel to the blocks running total
-            // Serial.printf("%d %d %d %d %d %d %d %d", i, R, G, B, pixel, block_y, block_x, temp_frame[block_y][block_x]);
-            // Serial.println();
+            // SERIALZ.printf("%d %d %d %d %d %d %d %d", i, R, G, B, pixel, block_y, block_x, temp_frame[block_y][block_x]);
+            // SERIALZ.println();
         }
         esp_camera_fb_return(fb); // return frame so memory can be released
 
@@ -231,12 +234,12 @@ public:
             }
         }
         if (!frameChanged)
-            Serial.println("Suspect camera problem as no change at all since previous image was captured");
+            SERIALZ.println("Suspect camera problem as no change at all since previous image was captured");
         // AveragePix = TempAveragePix / (FH * FW); // calculate the average pixel brightness in whole image
         // if (serialDebug && showFrames)
         //     print_frame(current_frame); // show captured frame on serial port for debugging
-        // Serial.print("AveragePix ");
-        // Serial.println(AveragePix);
+        // SERIALZ.print("AveragePix ");
+        // SERIALZ.println(AveragePix);
         return true;
     }
 
@@ -247,7 +250,7 @@ public:
 
     float motion_detect()
     {
-        // Serial.println("motion_detect");
+        // SERIALZ.println("motion_detect");
         uint16_t changes = 0;
         // const uint16_t blocks = (FWIDTH * FHEIGHT) / (BLOCK_SIZE_X * BLOCK_SIZE_Y);     // total number of blocks in image
 
@@ -269,16 +272,16 @@ public:
                     changes += 1; // if detection mask is enabled for this block increment changed block count
                                   // if (serialDebug)
                                   // {
-                    // Serial.print("diff\t");
-                    // Serial.print(y);
-                    // Serial.print('\t');
-                    // Serial.print(x);
-                    // Serial.print('\t');
-                    // Serial.print(current);
-                    // Serial.print('\t');
-                    // Serial.print(prev);
-                    // Serial.print('\t');
-                    // Serial.println(pChange);
+                    // SERIALZ.print("diff\t");
+                    // SERIALZ.print(y);
+                    // SERIALZ.print('\t');
+                    // SERIALZ.print(x);
+                    // SERIALZ.print('\t');
+                    // SERIALZ.print(current);
+                    // SERIALZ.print('\t');
+                    // SERIALZ.print(prev);
+                    // SERIALZ.print('\t');
+                    // SERIALZ.println(pChange);
                     // }
                 }
             }
@@ -291,22 +294,22 @@ public:
         if (changes >= Image_thresholdL && changes <= Image_thresholdH)
         {
             tCounter++;
-            // Serial.print("C ");
-            // Serial.print(changes);
-            // Serial.println(" ");
+            // SERIALZ.print("C ");
+            // SERIALZ.print(changes);
+            // SERIALZ.println(" ");
         }
         else
             tCounter = 0;
 
         // if (serialDebug)
         // {
-        // Serial.println();
-        // Serial.print("Changed ");
-        // Serial.print("C ");
-        // Serial.println(changes);
-        // Serial.println(" ");
-        // Serial.print(" out of ");
-        // Serial.println(mask_active * blocksPerMaskUnit);
+        // SERIALZ.println();
+        // SERIALZ.print("Changed ");
+        // SERIALZ.print("C ");
+        // SERIALZ.println(changes);
+        // SERIALZ.println(" ");
+        // SERIALZ.print(" out of ");
+        // SERIALZ.println(mask_active * blocksPerMaskUnit);
         // }
 
         return changes; // return number of changed blocks
@@ -323,48 +326,51 @@ public:
 
     void loop()
     {
-        capture_still();
-        uint16_t changes = motion_detect();
-        update_frame();
-        if ((changes >= Image_thresholdL) && (changes <= Image_thresholdH))
-        { // if enough change to count as motion detected
-            if (tCounter >= tCounterTrigger)
-            { // only trigger if movement detected in more than one consequitive frames
-                Serial.print(tCounter);
-                // Serial.println(" MotionDetected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                tCounter = 0;
-                if ((unsigned long)(millis() - TRIGGERtimer) >= (TriggerLimitTime * 1000))
-                {                            // limit time between triggers
-                    TRIGGERtimer = millis(); // update last trigger time
-                                             // run motion detected procedure (blocked if io high is required)
-                                             // if (ioRequiredHighToTrigger == 0 || SensorStatus == 1)
-                                             // {
-                    // MotionDetected(changes);
-                    camMotionCallback();
-                    // Serial.print(tCounter);
-                    Serial.println(" MotionDetected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        if (armed)
+        {
+            capture_still();
+            uint16_t changes = motion_detect();
+            update_frame();
+            if ((changes >= Image_thresholdL) && (changes <= Image_thresholdH))
+            { // if enough change to count as motion detected
+                if (tCounter >= tCounterTrigger)
+                { // only trigger if movement detected in more than one consequitive frames
+                    SERIALZ.print(tCounter);
+                    // SERIALZ.println(" MotionDetected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    tCounter = 0;
+                    if ((unsigned long)(millis() - TRIGGERtimer) >= (TriggerLimitTime * 1000))
+                    {                            // limit time between triggers
+                        TRIGGERtimer = millis(); // update last trigger time
+                                                 // run motion detected procedure (blocked if io high is required)
+                                                 // if (ioRequiredHighToTrigger == 0 || SensorStatus == 1)
+                                                 // {
+                        // MotionDetected(changes);
+                        camMotionCallback();
+                        // SERIALZ.print(tCounter);
+                        SERIALZ.println(" MotionDetected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    }
+                    // else
+                    // {
+                    //     SERIALZ.println("Too soon to re-trigger");
+                    // }
                 }
-                // else
-                // {
-                //     Serial.println("Too soon to re-trigger");
-                // }
+                else
+                {
+                    // if (serialDebug)
+                    // {
+                    SERIALZ.println("enough change to count as motion detectedToo soon to re-trigger");
+                    // }
+                }
             }
-            else
-            {
-                // if (serialDebug)
-                // {
-                Serial.println("enough change to count as motion detectedToo soon to re-trigger");
-                // }
-            }
+            // else
+            // {
+            //     // if (serialDebug)
+            //     // {
+            //     SERIALZ.println("Changes under treshold ");
+            //     SERIALZ.println(changes);
+            //     // }
+            // }
         }
-        // else
-        // {
-        //     // if (serialDebug)
-        //     // {
-        //     Serial.println("Changes under treshold ");
-        //     Serial.println(changes);
-        //     // }
-        // }
     }
 
     static size_t jpg_encode_stream(void *arg, size_t index, const void *data, size_t len)
@@ -392,7 +398,7 @@ esp_err_t Camz::capture_handler(httpd_req_t *req)
     fb = esp_camera_fb_get();
     if (!fb)
     {
-        Serial.println("Camera capture failed");
+        SERIALZ.println("Camera capture failed");
         httpd_resp_send_500(req);
         return ESP_FAIL;
     }
@@ -423,14 +429,14 @@ esp_err_t Camz::capture_handler(httpd_req_t *req)
         }
         esp_camera_fb_return(fb);
         int64_t fr_end = esp_timer_get_time();
-        Serial.printf("JPG: %uB %ums\n", (uint32_t)(fb_len), (uint32_t)((fr_end - fr_start) / 1000));
+        SERIALZ.printf("JPG: %uB %ums\n", (uint32_t)(fb_len), (uint32_t)((fr_end - fr_start) / 1000));
         return res;
     }
 }
 
 esp_err_t Camz::stream_handler(httpd_req_t *req)
 {
-    Serial.println("stream_handler");
+    SERIALZ.println("stream_handler");
     camera_fb_t *fb = NULL;
     esp_err_t res = ESP_OK;
     size_t _jpg_buf_len = 0;
@@ -448,7 +454,7 @@ esp_err_t Camz::stream_handler(httpd_req_t *req)
         fb = esp_camera_fb_get();
         if (!fb)
         {
-            Serial.println("Camera capture failed");
+            SERIALZ.println("Camera capture failed");
             res = ESP_FAIL;
         }
         else
@@ -462,7 +468,7 @@ esp_err_t Camz::stream_handler(httpd_req_t *req)
                     fb = NULL;
                     if (!jpeg_converted)
                     {
-                        Serial.println("JPEG compression failed");
+                        SERIALZ.println("JPEG compression failed");
                         res = ESP_FAIL;
                     }
                 }
@@ -501,9 +507,9 @@ esp_err_t Camz::stream_handler(httpd_req_t *req)
         {
             break;
         }
-        // Serial.printf("MJPG: %uB\n",(uint32_t)(_jpg_buf_len));
+        // SERIALZ.printf("MJPG: %uB\n",(uint32_t)(_jpg_buf_len));
     }
-    Serial.println("stream_handler END");
+    SERIALZ.println("stream_handler END");
     return res;
 }
 

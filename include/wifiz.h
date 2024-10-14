@@ -17,7 +17,7 @@ public:
 
     void begin()
     {
-        Serial.println("WiFi begin");
+        SERIALZ.println("WiFi begin");
         WiFi.begin(ssid, password);
     }
 
@@ -26,8 +26,8 @@ public:
         if (this->connected == false && WiFi.isConnected())
         {
             this->connected = true;
-            Serial.print("WiFi IP address: ");
-            Serial.println(WiFi.localIP());
+            SERIALZ.print("WiFi IP address: ");
+            SERIALZ.println(WiFi.localIP());
 
             if (MDNS.begin("cam"))
             {
@@ -44,7 +44,7 @@ public:
     {
 
         // if (!connected) {
-        //     Serial.println("Not connected to wifi.. ");
+        //     SERIALZ.println("Not connected to wifi.. ");
         //     return;
         // }
 
@@ -70,22 +70,22 @@ public:
                 type = "filesystem";
 
             // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-            Serial.println("Start updating " + type); })
+            SERIALZ.println("Start updating " + type); })
             .onEnd([]()
-                   { Serial.println("\nEnd"); })
+                   { SERIALZ.println("\nEnd"); })
             .onProgress([](unsigned int progress, unsigned int total)
-                        { Serial.printf("Progress: %u%%\r", (progress / (total / 100))); })
+                        { SERIALZ.printf("Progress: %u%%\r", (progress / (total / 100))); })
             .onError([](ota_error_t error)
                      {
-            Serial.printf("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-            else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-            else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-            else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-            else if (error == OTA_END_ERROR) Serial.println("End Failed"); });
+            SERIALZ.printf("Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR) SERIALZ.println("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR) SERIALZ.println("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR) SERIALZ.println("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR) SERIALZ.println("Receive Failed");
+            else if (error == OTA_END_ERROR) SERIALZ.println("End Failed"); });
 
         ArduinoOTA.begin();
-        Serial.println("OTA Started");
+        SERIALZ.println("OTA Started");
     }
 
     void handleOTA()
@@ -116,24 +116,24 @@ public:
 //     static bool connected;
 
 //     static void connect() {
-//         Serial.println("WiFi begin");
+//         SERIALZ.println("WiFi begin");
 //         WiFi.begin(WIFI_SSID, WIFI_PASS);
 
 //         for (int i = 0; i < 10; i++) {
 //             if (WiFi.status() == WL_CONNECTED) {
 //                 break;
 //             }
-//             Serial.print(i);
+//             SERIALZ.print(i);
 //             delay(500);
 //         }
 //         if (WiFi.status() != WL_CONNECTED) {
-//             Serial.println("Still not connected after 5 seconds!");
+//             SERIALZ.println("Still not connected after 5 seconds!");
 //             return;
 //         }
 //         connected = true;
 
-//         Serial.print("WiFi IP address: ");
-//         Serial.println(WiFi.localIP());
+//         SERIALZ.print("WiFi IP address: ");
+//         SERIALZ.println(WiFi.localIP());
 //         ip = WiFi.localIP();
 
 //         // Set up mDNS responder:
@@ -142,10 +142,10 @@ public:
 //         // - second argument is the IP address to advertise
 //         //   we send our IP address on the WiFi network
 //         if (!MDNS.begin("EspCam")) {
-//             Serial.println("Error setting up MDNS responder!");
+//             SERIALZ.println("Error setting up MDNS responder!");
 //             return;
 //         }
-//         Serial.println("mDNS responder started");
+//         SERIALZ.println("mDNS responder started");
 
 //         // Add service to MDNS-SD add after webserver started?
 //         MDNS.addService("http", "tcp", 80);
@@ -154,7 +154,7 @@ public:
 //     static void enableOTA() {
 
 //         if (!connected) {
-//             Serial.println("Not connected to wifi.. ");
+//             SERIALZ.println("Not connected to wifi.. ");
 //             return;
 //         }
 
@@ -179,25 +179,25 @@ public:
 //                 type = "filesystem";
 
 //             // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-//             Serial.println("Start updating " + type);
+//             SERIALZ.println("Start updating " + type);
 //         })
 //         .onEnd([]() {
-//             Serial.println("\nEnd");
+//             SERIALZ.println("\nEnd");
 //         })
 //         .onProgress([](unsigned int progress, unsigned int total) {
-//             Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+//             SERIALZ.printf("Progress: %u%%\r", (progress / (total / 100)));
 //         })
 //         .onError([](ota_error_t error) {
-//             Serial.printf("Error[%u]: ", error);
-//             if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-//             else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-//             else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-//             else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-//             else if (error == OTA_END_ERROR) Serial.println("End Failed");
+//             SERIALZ.printf("Error[%u]: ", error);
+//             if (error == OTA_AUTH_ERROR) SERIALZ.println("Auth Failed");
+//             else if (error == OTA_BEGIN_ERROR) SERIALZ.println("Begin Failed");
+//             else if (error == OTA_CONNECT_ERROR) SERIALZ.println("Connect Failed");
+//             else if (error == OTA_RECEIVE_ERROR) SERIALZ.println("Receive Failed");
+//             else if (error == OTA_END_ERROR) SERIALZ.println("End Failed");
 //         });
 
 //         ArduinoOTA.begin();
-//         Serial.println("OTA Started");
+//         SERIALZ.println("OTA Started");
 //     }
 
 //     static void handleOTA() {

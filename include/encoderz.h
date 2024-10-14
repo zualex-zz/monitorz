@@ -75,7 +75,7 @@ class Encoderz {
 
     // Encoderz(uint8_t pinClk = 34, uint8_t pinDt = 35, uint8_t pinSw = 39) : pinClk(pinClk), pinDt(pinDt), pinSw(pinSw) {
     static void begin(volatile void (*rotationHandlerz)(boolean up/* byte encoderPos */), volatile void (*pressedHandlerz)(), uint8_t pinClk = 34, uint8_t pinDt = 35, uint8_t pinSwz = 39) {
-        Serial.println("encoder begin");
+        SERIALZ.println("encoder begin");
         
         rotationHandler = rotationHandlerz;
         pressedHandler = pressedHandlerz;
@@ -89,7 +89,7 @@ class Encoderz {
         attachInterrupt(digitalPinToInterrupt(pinDt), PinB, RISING);
         attachInterrupt(digitalPinToInterrupt(pinSw), swRising, RISING);
 
-        Serial.println("encoder top");
+        SERIALZ.println("encoder top");
     }
 
     // static int readSw() {

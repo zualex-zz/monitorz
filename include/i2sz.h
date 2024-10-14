@@ -33,11 +33,11 @@ public:
             .fixed_mclk = 0,
         };
         if (ESP_OK != i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL)) {
-            Serial.println("i2s_driver_install: error");
+            SERIALZ.println("i2s_driver_install: error");
         }
 
         if (ESP_OK != i2s_set_pin(I2S_PORT, &in_pin_config)) {
-            Serial.println("i2s_set_pin: error");
+            SERIALZ.println("i2s_set_pin: error");
         }
 
         i2s_zero_dma_buffer(I2S_PORT);

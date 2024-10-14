@@ -22,7 +22,7 @@ class Pirz {
 
         // Checks if motion was detected, sets LED HIGH and starts a timer
         /*static void detectsMovement() {
-            Serial.println("MOTION DETECTED!!!");
+            SERIALZ.println("MOTION DETECTED!!!");
             startTimer = true;
             lastTrigger = millis();
             motionDetected = true;
@@ -40,19 +40,19 @@ class Pirz {
             
             // attachInterrupt(digitalPinToInterrupt(motionSensor), Pirz::detectsMovement, RISING);
 
-            Serial.print("Pirz init pin ");Serial.println(PIR_PIN);
+            SERIALZ.print("Pirz init pin ");SERIALZ.println(PIR_PIN);
         }
 
         static void loop() {
             int pirVal = digitalRead(PIR_PIN);
             if (motionDetected == false && pirVal == HIGH) {
                 motionDetected = true;
-                // Serial.println("Pirz!");
+                // SERIALZ.println("Pirz!");
                 pirMotion();
             }
             if (motionDetected == true && pirVal == LOW) {
                 motionDetected = false;
-                // Serial.println("Pirz end motion!");
+                // SERIALZ.println("Pirz end motion!");
                 pirMotionEnd();
             }
 
@@ -60,7 +60,7 @@ class Pirz {
     /*        now = millis();
             // Turn off the LED after the number of seconds defined in the timeSeconds variable
             if(startTimer && (now - lastTrigger > (timeSeconds*1000))) {
-                Serial.println("Motion stopped...");
+                SERIALZ.println("Motion stopped...");
                 motionDetected = false;
                 startTimer = false;
             }*/

@@ -23,7 +23,7 @@ class Telegramz
 
     AsyncTelegram2 *bot;
 
-    bool armed = false;
+    // bool armed = false;
 
     typedef void (*TelegramCallBack)(Telegramz *);
 
@@ -33,23 +33,23 @@ class Telegramz
         TelegramCallBack execute;
     } Action;
 
-    std::vector<Action> actions = {
-        {"/arm", [](Telegramz *t)
-         {
-             t->armed = true;
-             t->send("Armed!");
-         }},
-        {"/disarm", [](Telegramz *t)
-         {
-             t->send("Disarmed!");
-             t->armed = false;
-         }}};
+    std::vector<Action> actions = {};
+    //     {"/arm", [](Telegramz *t)
+    //      {
+    //          t->armed = true;
+    //          t->send("Armed!");
+    //      }},
+    //     {"/disarm", [](Telegramz *t)
+    //      {
+    //          t->send("Disarmed!");
+    //          t->armed = false;
+    //      }}};
 
     void handleNewMessages(TBMessage msg)
     {
         const int64_t chat_id = msg.chatId;
         String text = msg.text;
-        Serial.println(text);
+        SERIALZ.println(text);
         String from_name = msg.sender.firstName;
         if (from_name == "")
         {
@@ -73,8 +73,8 @@ class Telegramz
             Action action = actions.at(i);
             if (text == action.text)
             {
-                Serial.print("executing ");
-                Serial.println(text);
+                SERIALZ.print("executing ");
+                SERIALZ.println(text);
                 action.execute(this);
             }
         }
@@ -92,7 +92,7 @@ public:
                              {
             const char* res = sent ? "Picture delivered!" : "Error! Picture NOT delivered";
             if (!sent) {
-                Serial.print("Sent");
+                SERIALZ.print("Sent");
                 // bot->sendTo(chatId, res); 
             } }, 3000);
 
@@ -101,20 +101,20 @@ public:
         bot->setTelegramToken(botToken);
 
         // Check if all things are ok
-        // Serial.print("\nTest Telegram connection... ");
-        // bot->begin() ? Serial.println("OK") : Serial.println("NOK");
+        // SERIALZ.print("\nTest Telegram connection... ");
+        // bot->begin() ? SERIALZ.println("OK") : SERIALZ.println("NOK");
 
         configTime(0, 0, "pool.ntp.org"); // get UTC time via NTP
         // time_t now = time(nullptr);
         // while (now < 24 * 3600)
         // {
-        //     Serial.print(".");
+        //     SERIALZ.print(".");
         //     delay(100);
         //     now = time(nullptr);
         // }
 
-        // Serial.print("Telegramz init ");
-        // Serial.println(now);
+        // SERIALZ.print("Telegramz init ");
+        // SERIALZ.println(now);
     }
 
     void begin()
@@ -124,8 +124,8 @@ public:
 
     void addAction(String text, TelegramCallBack toExecute)
     {
-        Serial.print("adding  ");
-        Serial.println(text);
+        SERIALZ.print("adding  ");
+        SERIALZ.println(text);
         actions.push_back({text, toExecute});
     }
 
@@ -133,11 +133,11 @@ public:
     {
         // if (armed)
         // {
-            Serial.print("sending ");
-            Serial.println(message);
-            bot->sendTo(chatId, message);
-            Serial.print("sended ");
-            Serial.println(message);
+        SERIALZ.print("sending ");
+        SERIALZ.println(message);
+        bot->sendTo(chatId, message);
+        SERIALZ.print("sended ");
+        SERIALZ.println(message);
         // }
     }
 
@@ -152,8 +152,8 @@ public:
         // if there is an incoming message...
         if (bot->getNewMessage(msg))
         {
-            Serial.print("New message from chat_id: ");
-            Serial.println(msg.sender.id);
+            SERIALZ.print("New message from chat_id: ");
+            SERIALZ.println(msg.sender.id);
             MessageType msgType = msg.messageType;
 
             if (msgType == MessageText)
