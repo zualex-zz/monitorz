@@ -244,6 +244,18 @@ void setup() {
       // telegramz->addAction("/flash", [](Telegramz* t) {
       //   t->send(camz->toggleFlash() ? "on" : "off");
       // });
+            telegramz->addAction("/casa", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[0]));
+      });
+            telegramz->addAction("/giardin", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[1]));
+      });
+            telegramz->addAction("/pranzo", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[2]));
+      });
+            telegramz->addAction("/cucina", [](Telegramz* t) {
+        t->send(shellyz->toggle(shellyz->relaies[3]));
+      });
       telegramz->addAction("/soggiorno", [](Telegramz* t) {
         t->send(shellyz->toggle(shellyz->relaies[4]));
       });
