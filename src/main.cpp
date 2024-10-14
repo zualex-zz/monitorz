@@ -1,4 +1,8 @@
 #include <Arduino.h>
+
+#define DEBUG true  //set to true for debug output, false for no debug output
+#define SERIAL if(DEBUG)Serial
+
 // #include <driver/i2s.h>
 // #include "i2sz.h"
 // #include "painless-meshz.h"
@@ -51,16 +55,16 @@ std::vector< MenuItem > menuItems = {
 
 /*volatile void rotationHandlerz(boolean up) {
   if (up) {
-    Serial.println("Up!");
+    SERIAL.println("Up!");
     menuz->next();
   } else {
-    Serial.println("Down!");
+    SERIAL.println("Down!");
     menuz->prev();
   }
 }
 
 volatile void pressedHandlerz() {
-  Serial.println("Pressed!");
+  SERIAL.println("Pressed!");
   menuz->select();
 }*/
 /*
@@ -78,14 +82,14 @@ void toggleLed() {
 }*/
 
 /*void onMessage(EspMessage* message) {
-  Serial.print("Message recieved ");Serial.println(message->btnPresed);
+  SERIAL.print("Message recieved ");SERIAL.println(message->btnPresed);
 }
 
 // Called when ESP-Now receives.
 void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
   // if (EspNowz::currentNode->type == AudioOut) {
   if (contains(EspNowz::currentNode->capabilities, AudioOut)) {
-    Serial.print("Playing ");Serial.println(samples);
+    SERIAL.print("Playing ");SERIAL.println(samples);
     // Convert it from 8 bit signed to 16 bit unsigned with an 0x80 delta which is what the DAC requires.
     int8_t *incoming8 = (int8_t *)incomingRaw;
     uint16_t incoming16[ESP_NOW_MAX_DATA_LEN] = {0};
@@ -100,7 +104,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
     esp_err_t result = i2s_write(I2S_NUM_0, incoming16, samples * 2, &bytesWritten, 500);
 
     if (result != ESP_OK) {
-      Serial.print("Error i2s_write ");Serial.println(result, HEX);
+      SERIAL.print("Error i2s_write ");SERIAL.println(result, HEX);
     }
 
     oledz.drawBands<uint16_t>(incoming16, ESP_NOW_MAX_DATA_LEN, menuz->getCurrentItem()->label, menuz->getCurrentItem()->value, &scale);
@@ -141,7 +145,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
 
 
 
-        Serial.printf("Starting stream server on port: '%d'\n", config.server_port);
+        SERIAL.printf("Starting stream server on port: '%d'\n", config.server_port);
         if (httpd_start(&stream_httpd, &config) == ESP_OK)
         {
             httpd_register_uri_handler(stream_httpd, &index_uri);
@@ -149,7 +153,7 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
 
         config.server_port += 1;
         config.ctrl_port += 1;
-        Serial.printf("Starting snapshot server on port: '%d'\n", config.server_port);
+        SERIAL.printf("Starting snapshot server on port: '%d'\n", config.server_port);
         if (httpd_start(&camera_httpd, &config) == ESP_OK)
         {
             httpd_register_uri_handler(camera_httpd, &capture_uri);
@@ -159,13 +163,13 @@ void onDataRecv(const uint8_t *mac, const uint8_t *incomingRaw, int samples) {
 
 void setup() {
 
-  Serial.begin(115200);
+  SERIAL.begin(115200);
   setupLedBuiltin();
 
   /*pinMode(BOOT_BTN, INPUT);
   attachInterrupt(digitalPinToInterrupt(BOOT_BTN), [](){
     cli();
-    Serial.println("Boot btn!");
+    SERIAL.println("Boot btn!");
     toggleLed();
 
     EspMessage espMessage;
@@ -183,7 +187,7 @@ void setup() {
   if (EspNowz::currentNode != NULL) {
     //if (EspNowz::currentNode->type == AudioIn) {
     if (contains(EspNowz::currentNode->capabilities, AudioIn)) {
-      Serial.println("AudioIn type");
+      SERIAL.println("AudioIn type");
       I2sz::startMic();
 
       Encoderz::begin(rotationHandlerz, pressedHandlerz);
@@ -191,7 +195,7 @@ void setup() {
       oledz.begin(); 
     // } else if (EspNowz::currentNode->type == AudioOut) {
     } else if (contains(EspNowz::currentNode->capabilities, AudioOut)) {
-      Serial.println("AudioOut type");
+      SERIAL.println("AudioOut type");
       I2sz::startDacExternal();
       oledz.begin();
       scale = 127; // FIXME remove
@@ -229,17 +233,17 @@ void setup() {
         camz->reuseBuffer(fb);
         camz->setFramesizeMotion();
       });
-      telegramz->addAction("/picture", [](Telegramz* t) {
-        photoOnPir = !photoOnPir;
-        t->send(photoOnPir ? "on" : "off");
-      });
-      telegramz->addAction("/led", [](Telegramz* t) {
-        ledBuiltinBlinkOnPir = !ledBuiltinBlinkOnPir;
-        t->send(ledBuiltinBlinkOnPir ? "on" : "off");
-      });
-      telegramz->addAction("/flash", [](Telegramz* t) {
-        t->send(camz->toggleFlash() ? "on" : "off");
-      });
+      // telegramz->addAction("/picture", [](Telegramz* t) {
+      //   photoOnPir = !photoOnPir;
+      //   t->send(photoOnPir ? "on" : "off");
+      // });
+      // telegramz->addAction("/led", [](Telegramz* t) {
+      //   ledBuiltinBlinkOnPir = !ledBuiltinBlinkOnPir;
+      //   t->send(ledBuiltinBlinkOnPir ? "on" : "off");
+      // });
+      // telegramz->addAction("/flash", [](Telegramz* t) {
+      //   t->send(camz->toggleFlash() ? "on" : "off");
+      // });
       telegramz->addAction("/soggiorno", [](Telegramz* t) {
         t->send(shellyz->toggle(shellyz->relaies[4]));
       });
@@ -261,7 +265,7 @@ void setup() {
         if (ledBuiltinBlinkOnPir) {
           ledBuiltinOn();
         }
-        Serial.print("motion.. ");
+        SERIAL.print("motion.. ");
         if (!photoOnPir) {
           telegramz->send("motionz");
         } else {
@@ -274,12 +278,12 @@ void setup() {
         if (ledBuiltinBlinkOnPir) {
           ledBuiltinOff();
         }
-        Serial.println("end!");
+        SERIAL.println("end!");
         telegramz->send("motionz end");
       });
     /*}
   } else {
-    Serial.print("Unknow mac ardess! ");Serial.println(WiFi.macAddress());
+    SERIAL.print("Unknow mac ardess! ");SERIAL.println(WiFi.macAddress());
   }*/
   // camz->toggleFlash();
 }
@@ -342,10 +346,10 @@ void loop() {
               buffer8[i] = scaled;
           }
       }
-      //Serial.print("Sending ");Serial.println(samplesRead);
+      //SERIAL.print("Sending ");SERIAL.println(samplesRead);
       // Send to the other ESP32.
       if (ESP_OK != esp_now_send(EspNowz::broadcast->address, (uint8_t *)buffer8, samplesRead)) {
-          Serial.println("Error: esp_now_send");
+          SERIAL.println("Error: esp_now_send");
           delay(500);
       }
       
@@ -360,11 +364,11 @@ void loop() {
 
   // Pirz::loop();
 
-  // Serial.print(buffer16[0]);Serial.print(" ");Serial.print(buffer16[1]);Serial.print(" ");Serial.print(buffer16[2]);Serial.print(" ");Serial.print(buffer16[3]);
+  // SERIAL.print(buffer16[0]);SERIAL.print(" ");SERIAL.print(buffer16[1]);SERIAL.print(" ");SERIAL.print(buffer16[2]);SERIAL.print(" ");SERIAL.print(buffer16[3]);
 
 if (wifiz->justConnected()) {
     //webServerz.begin();
-    Serial.println("wifi!");
+    SERIAL.println("wifi!");
     startHttpServer();
     telegramz->begin();
   }
